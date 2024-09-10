@@ -1,0 +1,30 @@
+CREATE PROCEDURE FetchRequestLogsAndZipFiles
+AS
+BEGIN
+    -- Declare a table variable to hold the result
+    DECLARE @Result TABLE
+    (
+        RequestId INT,
+        ContextId INT,
+        UniqueId INT,
+        LogData NVARCHAR(MAX),
+        ZipFileName NVARCHAR(255)
+    );
+
+    -- Fetch records from RequestLog based on ContextId and join with RequestLogZip
+    INSERT INTO @Result (RequestId, ContextId, UniqueId, LogData, ZipFileName)
+    SELECT RL.RequestId, RL.ContextId, RL.UniqueId, RL.LogData, RZ.ZipFileName
+    FROM RequestLog RL
+    INNER JOIN ArchiveDetails AD ON RL.ContextId = AD.ContextId
+    LEFT JOIN RequestLogZip RZ ON RL.RequestId = RZ.RequestId;
+
+    -- Fetch records from RequestLog based on UniqueId and join with RequestLogZip
+    INSERT INTO @Result (RequestId, ContextId, UniqueId, LogData, ZipFileName)
+    SELECT RL.RequestId, RL.ContextId, RL.UniqueId, RL.LogData, RZ.ZipFileName
+    FROM RequestLog RL
+    INNER JOIN ArchiveDetails AD ON RL.UniqueId = AD.UniqueId
+    LEFT JOIN RequestLogZip RZ ON RL.RequestId = RZ.RequestId;
+
+    -- Return the merged result set with distinct values to avoid duplicates
+    SELECT DISTINCT * FROM @Result;
+END;
